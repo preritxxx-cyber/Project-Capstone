@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="DutchIT – Split international trip expenses effortlessly with friends. Track who paid what, in any currency, and settle up smartly." />
+    <meta name="theme-color" content="#1E3A8A" />
+    <title>DutchIT – International Expense Splitter</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <!-- App renders here -->
+      <div id="loading-screen" class="loading-screen">
+        <div class="loading-logo">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <rect width="48" height="48" rx="14" fill="#1E3A8A"/>
+            <text x="24" y="33" text-anchor="middle" font-size="22" font-weight="800" fill="#F97316" font-family="Inter, sans-serif">D</text>
+          </svg>
+          <span>DutchIT</span>
+        </div>
+        <div class="loading-spinner"></div>
+      </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Modal overlay -->
+    <div id="modal-overlay" class="modal-overlay hidden"></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

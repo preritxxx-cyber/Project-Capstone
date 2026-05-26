@@ -1,0 +1,217 @@
+/* ============================================================
+   DutchIT – Base Styles
+   ============================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--color-text);
+  background: var(--color-bg);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* === Scrollbars === */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--blue-400); }
+
+/* === Selection === */
+::selection { background: var(--blue-200); color: var(--blue-900); }
+
+/* === Links === */
+a { color: var(--color-primary-light); text-decoration: none; transition: color var(--t-fast); }
+a:hover { color: var(--color-primary); }
+
+/* === Focus === */
+:focus-visible {
+  outline: 2px solid var(--blue-500);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* === Typography === */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  color: var(--color-text);
+}
+h1 { font-size: var(--fs-3xl); font-weight: var(--fw-extrabold); }
+h2 { font-size: var(--fs-2xl); }
+h3 { font-size: var(--fs-xl); }
+h4 { font-size: var(--fs-lg); }
+h5 { font-size: var(--fs-md); }
+h6 { font-size: var(--fs-base); }
+
+p { line-height: var(--lh-relaxed); }
+
+/* === Lists === */
+ul, ol { list-style: none; }
+
+/* === Images === */
+img, svg { display: block; max-width: 100%; }
+
+/* === Forms === */
+input, textarea, select, button {
+  font-family: var(--font);
+  font-size: var(--fs-base);
+}
+button { cursor: pointer; border: none; background: none; }
+input, textarea { border: none; outline: none; }
+select { appearance: none; -webkit-appearance: none; }
+
+/* === Loading Screen === */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-6);
+  background: linear-gradient(135deg, var(--blue-950) 0%, var(--blue-900) 50%, var(--blue-800) 100%);
+  z-index: 1000;
+  transition: opacity var(--t-slow), visibility var(--t-slow);
+}
+.loading-screen.fade-out { opacity: 0; visibility: hidden; }
+
+.loading-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.loading-logo span {
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-extrabold);
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+.loading-logo span::after {
+  content: '';
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255,255,255,0.2);
+  border-top-color: var(--orange-500);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* === App Layout === */
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-view {
+  flex: 1;
+  padding-top: var(--header-h);
+}
+
+/* === Empty State === */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  padding: var(--sp-16) var(--sp-8);
+  text-align: center;
+}
+.empty-state-icon {
+  width: 72px;
+  height: 72px;
+  background: var(--blue-50);
+  border-radius: var(--radius-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--blue-400);
+}
+.empty-state-title {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  color: var(--color-text);
+}
+.empty-state-desc {
+  font-size: var(--fs-md);
+  color: var(--color-text-secondary);
+  max-width: 320px;
+}
+
+/* === Divider === */
+.divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: var(--sp-4) 0;
+}
+.divider-text {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+.divider-text::before, .divider-text::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+/* === Utility Classes === */
+.hidden { display: none !important; }
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-sm { font-size: var(--fs-sm); }
+.text-xs { font-size: var(--fs-xs); }
+.text-muted { color: var(--color-text-muted); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-primary { color: var(--color-primary); }
+.text-orange { color: var(--color-orange); }
+.text-success { color: var(--color-success); }
+.text-error { color: var(--color-error); }
+.fw-medium { font-weight: var(--fw-medium); }
+.fw-semibold { font-weight: var(--fw-semibold); }
+.fw-bold { font-weight: var(--fw-bold); }
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: var(--sp-2); }
+.gap-3 { gap: var(--sp-3); }
+.gap-4 { gap: var(--sp-4); }
+.flex-1 { flex: 1; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

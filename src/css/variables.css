@@ -1,0 +1,128 @@
+/* ============================================================
+   DutchIT – CSS Variables (Design Tokens)
+   ============================================================ */
+
+:root {
+  /* === Brand Colors === */
+  --blue-950:  #0A1628;
+  --blue-900:  #1E3A8A;
+  --blue-800:  #1E40AF;
+  --blue-700:  #1D4ED8;
+  --blue-600:  #2563EB;
+  --blue-500:  #3B82F6;
+  --blue-400:  #60A5FA;
+  --blue-300:  #93C5FD;
+  --blue-200:  #BFDBFE;
+  --blue-100:  #DBEAFE;
+  --blue-50:   #EFF6FF;
+
+  --orange-600: #EA580C;
+  --orange-500: #F97316;
+  --orange-400: #FB923C;
+  --orange-300: #FDB97D;
+  --orange-200: #FED7AA;
+  --orange-100: #FFEDD5;
+  --orange-50:  #FFF7ED;
+
+  /* === Semantic Colors === */
+  --color-primary:         var(--blue-900);
+  --color-primary-light:   var(--blue-600);
+  --color-primary-hover:   var(--blue-800);
+  --color-accent:          var(--blue-500);
+  --color-orange:          var(--orange-500);
+  --color-orange-dark:     var(--orange-600);
+  --color-orange-light:    var(--orange-200);
+
+  --color-success:         #10B981;
+  --color-success-bg:      #ECFDF5;
+  --color-error:           #EF4444;
+  --color-error-bg:        #FEF2F2;
+  --color-warning:         #F59E0B;
+  --color-warning-bg:      #FFFBEB;
+
+  /* === Neutrals === */
+  --color-bg:              #F0F4FF;
+  --color-surface:         #FFFFFF;
+  --color-surface-2:       #F8FAFF;
+  --color-border:          #E2E8F0;
+  --color-border-strong:   #CBD5E1;
+
+  --color-text:            #0F172A;
+  --color-text-secondary:  #475569;
+  --color-text-muted:      #94A3B8;
+  --color-text-placeholder:#B0BAC9;
+
+  /* === Typography === */
+  --font:          'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --fs-xs:         11px;
+  --fs-sm:         13px;
+  --fs-base:       14px;
+  --fs-md:         15px;
+  --fs-lg:         17px;
+  --fs-xl:         20px;
+  --fs-2xl:        24px;
+  --fs-3xl:        30px;
+  --fs-4xl:        38px;
+
+  --fw-regular:    400;
+  --fw-medium:     500;
+  --fw-semibold:   600;
+  --fw-bold:       700;
+  --fw-extrabold:  800;
+
+  --lh-tight:      1.2;
+  --lh-snug:       1.375;
+  --lh-normal:     1.5;
+  --lh-relaxed:    1.625;
+
+  /* === Spacing Scale (4px base) === */
+  --sp-0:   0;
+  --sp-1:   4px;
+  --sp-2:   8px;
+  --sp-3:   12px;
+  --sp-4:   16px;
+  --sp-5:   20px;
+  --sp-6:   24px;
+  --sp-8:   32px;
+  --sp-10:  40px;
+  --sp-12:  48px;
+  --sp-16:  64px;
+  --sp-20:  80px;
+  --sp-24:  96px;
+
+  /* === Border Radius === */
+  --radius-xs:  4px;
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+  --radius-2xl: 28px;
+  --radius-full: 9999px;
+
+  /* === Shadows === */
+  --shadow-xs:  0 1px 2px rgba(30,58,138,0.06);
+  --shadow-sm:  0 1px 4px rgba(30,58,138,0.08), 0 1px 2px rgba(30,58,138,0.04);
+  --shadow-md:  0 4px 16px rgba(30,58,138,0.10), 0 2px 6px rgba(30,58,138,0.06);
+  --shadow-lg:  0 8px 28px rgba(30,58,138,0.13), 0 3px 10px rgba(30,58,138,0.08);
+  --shadow-xl:  0 16px 48px rgba(30,58,138,0.18), 0 6px 18px rgba(30,58,138,0.10);
+  --shadow-orange: 0 4px 20px rgba(249,115,22,0.30);
+  --shadow-blue:   0 4px 20px rgba(59,130,246,0.30);
+
+  /* === Transitions === */
+  --t-fast:  120ms cubic-bezier(0.4,0,0.2,1);
+  --t-base:  220ms cubic-bezier(0.4,0,0.2,1);
+  --t-slow:  380ms cubic-bezier(0.4,0,0.2,1);
+  --t-bounce: 500ms cubic-bezier(0.34,1.56,0.64,1);
+
+  /* === Z-Index === */
+  --z-header:   50;
+  --z-dropdown: 100;
+  --z-modal:    300;
+  --z-toast:    400;
+
+  /* === Layout === */
+  --header-h:       64px;
+  --sidebar-w:      280px;
+  --content-max:    1100px;
+  --modal-max:      560px;
+}
