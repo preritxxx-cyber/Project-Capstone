@@ -26,7 +26,9 @@ export function filterExpenses(expenses, filters = {}) {
     if (memberId) {
       const inPayment = (exp.payments || []).some(p => p.memberId === memberId);
       const inSettlement = (exp.settlements || []).some(s => s.memberId === memberId);
-      if (!inPayment && !inSettlement) return false;
+      const isAdder =
+        exp.addedByMemberId === memberId || exp.createdBy === memberId;
+      if (!inPayment && !inSettlement && !isAdder) return false;
     }
 
     return true;
@@ -105,26 +107,48 @@ export function aggregateByPerson(group, expenses, filters) {
   const paidExpenseIds = {};
 
   for (const exp of filtered) {
-    const expCurr = expense.amount?.currency || baseCurrency;
+    const expCurr = exp.amount?.currency || baseCurrency;
+    const expTotalBase = expenseTotalInBase(group, exp, baseCurrency);
+    const payments = exp.payments || [];
+    const settlements = exp.settlements || [];
 
-    for (const p of exp.payments || []) {
-      if (!map[p.memberId]) continue;
-      const payCurr = p.amount?.currency || expCurr;
-      map[p.memberId].paid = round(
-        map[p.memberId].paid + Expenses.convertToBase(group, parseNum(p.amount?.value || 0), payCurr, baseCurrency),
-        4
-      );
-      if (!paidExpenseIds[p.memberId]) paidExpenseIds[p.memberId] = new Set();
-      paidExpenseIds[p.memberId].add(exp.expenseId);
+    if (payments.length > 0) {
+      for (const p of payments) {
+        if (!map[p.memberId]) continue;
+        const payCurr = p.amount?.currency || expCurr;
+        map[p.memberId].paid = round(
+          map[p.memberId].paid + Expenses.convertToBase(group, parseNum(p.amount?.value || 0), payCurr, baseCurrency),
+          4
+        );
+        if (!paidExpenseIds[p.memberId]) paidExpenseIds[p.memberId] = new Set();
+        paidExpenseIds[p.memberId].add(exp.expenseId);
+      }
+    } else {
+      const adderId =
+        exp.addedByMemberId ||
+        exp.createdBy ||
+        members[0]?.memberId;
+      if (adderId && map[adderId]) {
+        map[adderId].paid = round(map[adderId].paid + expTotalBase, 4);
+        if (!paidExpenseIds[adderId]) paidExpenseIds[adderId] = new Set();
+        paidExpenseIds[adderId].add(exp.expenseId);
+      }
     }
 
-    for (const s of exp.settlements || []) {
-      if (!map[s.memberId]) continue;
-      const sCurr = s.calculatedAmount?.currency || expCurr;
-      map[s.memberId].share = round(
-        map[s.memberId].share + Expenses.convertToBase(group, parseNum(s.calculatedAmount?.value || 0), sCurr, baseCurrency),
-        4
-      );
+    if (settlements.length > 0) {
+      for (const s of settlements) {
+        if (!map[s.memberId]) continue;
+        const sCurr = s.calculatedAmount?.currency || expCurr;
+        map[s.memberId].share = round(
+          map[s.memberId].share + Expenses.convertToBase(group, parseNum(s.calculatedAmount?.value || 0), sCurr, baseCurrency),
+          4
+        );
+      }
+    } else if (members.length > 0 && expTotalBase > 0) {
+      const perMember = expTotalBase / members.length;
+      for (const m of members) {
+        map[m.memberId].share = round(map[m.memberId].share + perMember, 4);
+      }
     }
   }
 
@@ -132,9 +156,7 @@ export function aggregateByPerson(group, expenses, filters) {
     map[id].expenseCount = paidExpenseIds[id]?.size || 0;
   }
 
-  return Object.values(map)
-    .filter(m => m.paid > 0.001 || m.share > 0.001)
-    .sort((a, b) => b.share - a.share);
+  return Object.values(map).sort((a, b) => b.share + b.paid - (a.share + a.paid));
 }
 
 /** Daily totals by invoice date */

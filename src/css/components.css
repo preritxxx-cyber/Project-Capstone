@@ -1192,3 +1192,106 @@
   border-color: var(--blue-400);
   box-shadow: 0 0 0 3px rgba(59,130,246,0.10);
 }
+
+/* ===== IMPORT / EXPORT ===== */
+
+.expenses-tab-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--sp-4);
+}
+
+.import-export-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.import-export-intro {
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.import-export-section {
+  padding: var(--sp-4);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.import-export-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  margin: 0 0 var(--sp-3);
+  color: var(--color-text);
+}
+
+.import-export-steps {
+  margin: 0 0 var(--sp-4);
+  padding-left: var(--sp-5);
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.import-export-desc,
+.import-export-hint {
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--sp-3);
+  line-height: 1.5;
+}
+
+.import-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.ie-upload-label {
+  cursor: pointer;
+  margin: 0;
+}
+
+.import-export-status {
+  margin-top: var(--sp-3);
+}
+
+.import-export-status.hidden {
+  display: none;
+}
+
+.import-export-loading {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.import-export-result {
+  font-size: var(--fs-sm);
+  padding: var(--sp-3);
+  border-radius: var(--radius-md);
+  line-height: 1.5;
+}
+
+.import-export-result.success {
+  background: var(--color-success-bg, #ecfdf5);
+  border: 1px solid var(--color-success, #10b981);
+  color: var(--color-text);
+}
+
+.import-export-result.has-errors {
+  background: #fef2f2;
+  border: 1px solid var(--color-error);
+  color: var(--color-text);
+}
+
+.import-export-errors {
+  margin: var(--sp-2) 0 0;
+  padding-left: var(--sp-4);
+  font-size: var(--fs-xs);
+}

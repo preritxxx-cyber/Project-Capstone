@@ -59,7 +59,7 @@ export function renderAnalysisTab(group, expenses) {
       <div class="empty-state">
         <div class="empty-state-icon">📊</div>
         <div class="empty-state-title">No data to analyse yet</div>
-        <div class="empty-state-desc">Add expenses to see category, member, and date breakdowns.</div>
+        <div class="empty-state-desc">Add expenses (even with just a description and category) to see breakdowns here.</div>
       </div>
     `;
   }
@@ -347,25 +347,35 @@ export function mountAnalysisTab(group, expenses, onRefresh) {
   destroyCharts();
 
   const filtered = filterExpenses(expenses, _filters);
-  if (filtered.length === 0) {
-    bindFilterEvents(onRefresh);
-    return;
-  }
+  bindFilterEvents(onRefresh);
+
+  if (filtered.length === 0) return;
 
   const baseCurrency = group?.baseCurrency || 'USD';
-  const byCategory = aggregateByCategory(group, expenses, _filters);
-  const byPerson = aggregateByPerson(group, expenses, _filters);
-  const byDate = aggregateByDate(group, expenses, _filters);
 
-  renderCategoryTable(document.getElementById('an-table-category'), byCategory, baseCurrency);
-  renderPersonTable(document.getElementById('an-table-person'), byPerson, baseCurrency);
-  renderDateTable(document.getElementById('an-table-date'), byDate, baseCurrency);
+  try {
+    const byCategory = aggregateByCategory(group, expenses, _filters);
+    renderCategoryTable(document.getElementById('an-table-category'), byCategory, baseCurrency);
+    mountCategoryChart(document.getElementById('an-chart-category'), byCategory, baseCurrency);
+  } catch (e) {
+    console.error('Analysis: category chart failed', e);
+  }
 
-  mountCategoryChart(document.getElementById('an-chart-category'), byCategory, baseCurrency);
-  mountPersonChart(document.getElementById('an-chart-person'), byPerson, baseCurrency);
-  mountDateChart(document.getElementById('an-chart-date'), byDate, baseCurrency);
+  try {
+    const byPerson = aggregateByPerson(group, expenses, _filters);
+    renderPersonTable(document.getElementById('an-table-person'), byPerson, baseCurrency);
+    mountPersonChart(document.getElementById('an-chart-person'), byPerson, baseCurrency);
+  } catch (e) {
+    console.error('Analysis: person chart failed', e);
+  }
 
-  bindFilterEvents(onRefresh);
+  try {
+    const byDate = aggregateByDate(group, expenses, _filters);
+    renderDateTable(document.getElementById('an-table-date'), byDate, baseCurrency);
+    mountDateChart(document.getElementById('an-chart-date'), byDate, baseCurrency);
+  } catch (e) {
+    console.error('Analysis: date chart failed', e);
+  }
 }
 
 function bindFilterEvents(onRefresh) {

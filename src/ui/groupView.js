@@ -17,6 +17,7 @@ import { openConversionForm } from './conversionForm.js';
 import { openConfirm, showToast } from './modals.js';
 import { fxHeaderButtonHtml, attachFxHeaderButton, updateFxContext } from './globalFx.js';
 import { renderAnalysisTab, mountAnalysisTab } from './analysisTab.js';
+import { openImportExportPanel } from './importExportPanel.js';
 
 /* ─── Helpers ─── */
 
@@ -38,17 +39,30 @@ function renderExpensesTab(group, expenses, onRefresh) {
         </div>
         <div class="empty-state-title">No expenses yet</div>
         <div class="empty-state-desc">Add the first expense for this trip!</div>
-        <button class="btn btn-orange" id="exp-add-first">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          Add Expense
-        </button>
+        <div style="display:flex;flex-wrap:wrap;gap:var(--sp-2);justify-content:center">
+          <button class="btn btn-orange" id="exp-add-first">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add Expense
+          </button>
+          <button type="button" class="btn btn-secondary" id="gv-import-export-empty">
+            Import / Export
+          </button>
+        </div>
       </div>
     `;
   }
 
   return `
+    <div class="expenses-tab-toolbar">
+      <button type="button" class="btn btn-secondary btn-sm" id="gv-import-export-btn" title="Import or export expenses">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Import / Export
+      </button>
+    </div>
     <div id="expenses-list">
       ${expenses.map(exp => renderExpenseItem(exp, group)).join('')}
     </div>
@@ -714,6 +728,13 @@ export function renderGroupView(app, groupId, onBack) {
     document.getElementById('exp-add-first')?.addEventListener('click', () => {
       document.getElementById('gv-add-expense')?.click();
     });
+
+    const openImportExport = () => {
+      const g = Groups.getById(groupId);
+      if (g) openImportExportPanel(g, () => render());
+    };
+    document.getElementById('gv-import-export-btn')?.addEventListener('click', openImportExport);
+    document.getElementById('gv-import-export-empty')?.addEventListener('click', openImportExport);
 
     // Edit expense
     document.querySelectorAll('.exp-edit-btn').forEach(btn => {
