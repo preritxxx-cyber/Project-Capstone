@@ -14,38 +14,66 @@ import { renderDashboard } from './ui/dashboard.js';
 import { renderGroupView } from './ui/groupView.js';
 import { showToast, closeAllModals } from './ui/modals.js';
 import { initGlobalFx, updateFxContext } from './ui/globalFx.js';
+import { isCloudMode } from './js/config.js';
+import { Auth } from './js/auth.js';
+import { initDataLayer, ensureGroupLoaded } from './js/dataLayer.js';
+import { logCloudStatus, setCloudErrorHandler } from './js/cloudStatus.js';
 
 const app = document.getElementById('app');
 
-function initApp() {
-  // Remove loading screen if present
-  const loading = document.getElementById('loading-screen');
-  if (loading) loading.remove();
-
-  // Initialize current user state
-  User.init();
-
-  if (!User.isSetup()) {
-    renderOnboarding(() => {
-      window.addEventListener('hashchange', handleRoute);
-      initGlobalFx();
-      handleRoute();
-    });
+async function bootstrapUser() {
+  if (isCloudMode()) {
+    await Auth.init();
+    if (Auth.isSignedIn()) {
+      await User.initFromAuth();
+    } else {
+      User.clear();
+    }
   } else {
-    window.addEventListener('hashchange', handleRoute);
-    initGlobalFx();
-    handleRoute();
+    User.init();
   }
 }
 
-function handleRoute() {
-  // Always dismiss active modals on navigation
+async function initApp() {
+  setCloudErrorHandler((msg) => showToast(msg, 'error', 8000));
+
+  const loading = document.getElementById('loading-screen');
+  if (loading) loading.remove();
+
+  logCloudStatus();
+
+  try {
+    await bootstrapUser();
+    if (User.isSetup()) {
+      await initDataLayer();
+    }
+  } catch (err) {
+    console.error('App init failed:', err);
+    showToast(err.message || 'Failed to connect. Check Supabase settings.', 'error');
+    if (!isCloudMode()) User.init();
+  }
+
+  if (!User.isSetup()) {
+    renderOnboarding(async () => {
+      await initDataLayer();
+      window.addEventListener('hashchange', () => { handleRoute(); });
+      initGlobalFx();
+      await handleRoute();
+    });
+  } else {
+    window.addEventListener('hashchange', () => { handleRoute(); });
+    initGlobalFx();
+    await handleRoute();
+  }
+}
+
+async function handleRoute() {
   closeAllModals();
 
   if (!User.isSetup()) {
-    renderOnboarding(() => {
-      window.addEventListener('hashchange', handleRoute);
-      handleRoute();
+    renderOnboarding(async () => {
+      await initDataLayer();
+      await handleRoute();
     });
     return;
   }
@@ -54,7 +82,19 @@ function handleRoute() {
 
   if (hash.startsWith('#group/')) {
     const groupId = hash.substring(7);
+    try {
+      await ensureGroupLoaded(groupId);
+    } catch (err) {
+      showToast(err.message || 'Could not load trip.', 'error');
+      window.location.hash = '';
+      return;
+    }
     const group = Groups.getById(groupId);
+    if (!group) {
+      showToast('Trip not found or you do not have access.', 'error');
+      window.location.hash = '';
+      return;
+    }
     updateFxContext({ groupId, groupName: group?.name || null });
     renderGroupView(app, groupId, () => {
       window.location.hash = '';
@@ -62,17 +102,15 @@ function handleRoute() {
   } else if (hash.startsWith('#join/')) {
     const groupId = hash.substring(6);
     try {
-      const { group, alreadyMember } = Groups.joinById(groupId);
+      const { group, alreadyMember } = await Groups.joinById(groupId);
       if (alreadyMember) {
         showToast(`You're already a member of "${group.name}"`, 'info');
       } else {
         showToast(`Joined "${group.name}" successfully! 🎉`, 'success');
       }
-      // Redirect to the newly joined group
       window.location.hash = `#group/${groupId}`;
     } catch (err) {
       showToast(err.message, 'error');
-      // Go back to dashboard
       window.location.hash = '';
     }
   } else {
@@ -83,9 +121,8 @@ function handleRoute() {
   }
 }
 
-// Start app initialization
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initApp);
+  document.addEventListener('DOMContentLoaded', () => { initApp(); });
 } else {
   initApp();
 }

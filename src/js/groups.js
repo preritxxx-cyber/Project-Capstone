@@ -4,6 +4,8 @@
 import { GroupStore } from './store.js';
 import { generateGroupId, generateDummyMemberId } from './utils.js';
 import { User } from './user.js';
+import { isCloudMode } from './config.js';
+import { cloudJoinGroup, ensureGroupLoaded } from './dataLayer.js';
 
 export const Groups = {
 
@@ -98,14 +100,30 @@ export const Groups = {
   },
 
   /** Join a group by ID (add current user as member) */
-  joinById(groupId) {
+  async joinById(groupId) {
     const currentUser = User.get();
     if (!currentUser) throw new Error('No user logged in');
 
-    const group = GroupStore.getById(groupId);
+    if (isCloudMode()) {
+      const member = {
+        memberId: currentUser.userId,
+        name: currentUser.displayName,
+        isCreator: false,
+        isDummy: false,
+        joinedAt: new Date().toISOString(),
+      };
+      const result = await cloudJoinGroup(groupId, member);
+      GroupStore.mergeGroup(result.group);
+      return result;
+    }
+
+    let group = GroupStore.getById(groupId);
+    if (!group) {
+      await ensureGroupLoaded(groupId);
+      group = GroupStore.getById(groupId);
+    }
     if (!group) throw new Error('Group not found. Please check the group ID.');
 
-    // Already a member?
     if (group.members.some(m => m.memberId === currentUser.userId)) {
       return { group, alreadyMember: true };
     }

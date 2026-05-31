@@ -10,6 +10,9 @@ import { openGroupForm } from './groupForm.js';
 import { openModal, closeModal, showToast } from './modals.js';
 import { fxHeaderButtonHtml, attachFxHeaderButton } from './globalFx.js';
 import { ExpenseStore } from '../js/store.js';
+import { isCloudMode } from '../js/config.js';
+import { getCloudStatus } from '../js/cloudStatus.js';
+import { refreshFromCloud } from '../js/dataLayer.js';
 
 /* ─── Avatar HTML ─── */
 function groupAvatarHtml(group) {
@@ -140,7 +143,7 @@ function openJoinGroupDialog(onJoined) {
   });
 
   modal.querySelector('#join-cancel').addEventListener('click', closeModal);
-  modal.querySelector('#join-submit').addEventListener('click', () => {
+  modal.querySelector('#join-submit').addEventListener('click', async () => {
     const groupId = modal.querySelector('#join-group-id')?.value.trim();
     const errEl   = modal.querySelector('#join-error');
 
@@ -150,8 +153,10 @@ function openJoinGroupDialog(onJoined) {
       return;
     }
 
+    const btn = modal.querySelector('#join-submit');
+    btn.disabled = true;
     try {
-      const { group, alreadyMember } = Groups.joinById(groupId);
+      const { group, alreadyMember } = await Groups.joinById(groupId);
       closeModal();
       if (alreadyMember) {
         showToast(`You're already a member of "${group.name}"`, 'info');
@@ -162,6 +167,7 @@ function openJoinGroupDialog(onJoined) {
     } catch (err) {
       errEl.textContent = err.message;
       errEl.classList.remove('hidden');
+      btn.disabled = false;
     }
   });
 
@@ -176,6 +182,11 @@ function openJoinGroupDialog(onJoined) {
 export function renderDashboard(app, onGroupOpen) {
   const currentUser = User.get();
   const groups = Groups.getMyGroups();
+  const cloud = isCloudMode();
+  const cloudStatus = getCloudStatus();
+  const syncLabel = cloud
+    ? (cloudStatus.signedIn ? '☁️ Cloud sync on' : '⚠️ Sign in for cloud')
+    : '💾 Local only';
 
   app.innerHTML = `
     <!-- Header -->
@@ -216,6 +227,12 @@ export function renderDashboard(app, onGroupOpen) {
               ? `${groups.length} group${groups.length !== 1 ? 's' : ''} · Track expenses across all your trips`
               : 'Create a group to start splitting expenses'}
           </p>
+          ${cloud ? `
+            <div style="display:flex;align-items:center;gap:var(--sp-2);margin-top:var(--sp-2);flex-wrap:wrap">
+              <span class="badge ${cloudStatus.signedIn ? 'badge-green' : 'badge-orange'}" style="font-size:11px">${syncLabel}</span>
+              ${cloudStatus.signedIn ? `<button type="button" class="btn btn-ghost btn-sm" id="dash-refresh-cloud">Refresh from cloud</button>` : ''}
+            </div>
+          ` : ''}
         </div>
 
         <!-- Groups grid -->
@@ -251,6 +268,16 @@ export function renderDashboard(app, onGroupOpen) {
   });
 
   attachFxHeaderButton();
+
+  document.getElementById('dash-refresh-cloud')?.addEventListener('click', async () => {
+    try {
+      await refreshFromCloud();
+      showToast('Reloaded trips from Supabase.', 'success');
+      refresh();
+    } catch (err) {
+      showToast(err.message || 'Cloud refresh failed.', 'error');
+    }
+  });
 
   // Join Group
   document.getElementById('hdr-join-btn')?.addEventListener('click', () => {

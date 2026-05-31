@@ -1,194 +1,205 @@
 /**
- * DutchIT – localStorage Store (Data Persistence Layer)
+ * DutchIT – Data persistence facade (localStorage + optional Supabase)
  */
+import { isCloudMode } from './config.js';
+import {
+  getGroupsCache,
+  getExpensesCache,
+  setGroupsCache,
+  setExpensesCache,
+  upsertGroupInCache,
+  removeGroupFromCache,
+  removeExpenseFromCache,
+  removeExpensesForGroupFromCache,
+  cloudCreateGroup,
+  cloudUpdateGroup,
+  cloudDeleteGroup,
+  cloudAddMember,
+  cloudRemoveMember,
+  cloudAddConversionRate,
+  cloudRemoveConversionRate,
+  cloudCreateExpense,
+  cloudUpdateExpense,
+  cloudDeleteExpense,
+  KEYS,
+  loadUserLocal,
+  saveUserLocal,
+} from './dataLayer.js';
+import { reportCloudError } from './cloudStatus.js';
 
-const KEYS = {
-  USER:     'dutchit_user',
-  GROUPS:   'dutchit_groups',
-  EXPENSES: 'dutchit_expenses',
-};
-
-/* ─── Helpers ─── */
-
-function load(key) {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+function runCloud(promise, label) {
+  if (!isCloudMode()) return;
+  Promise.resolve(promise).catch(err => reportCloudError(label, err));
 }
-
-function save(key, data) {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-    return true;
-  } catch (e) {
-    console.error('DutchIT storage error:', e);
-    return false;
-  }
-}
-
-/* ─── User ─── */
 
 export const UserStore = {
-  get() { return load(KEYS.USER); },
-  set(user) { return save(KEYS.USER, user); },
+  get() { return loadUserLocal(KEYS.USER); },
+  set(user) { return saveUserLocal(KEYS.USER, user); },
   clear() { localStorage.removeItem(KEYS.USER); },
-  exists() { return !!load(KEYS.USER); },
+  exists() { return !!loadUserLocal(KEYS.USER); },
 };
 
-/* ─── Groups ─── */
-
 export const GroupStore = {
-  /** Get all groups array */
   getAll() {
-    return load(KEYS.GROUPS) || [];
+    return getGroupsCache();
   },
 
-  /** Get single group by ID */
   getById(groupId) {
-    const groups = this.getAll();
-    return groups.find(g => g.groupId === groupId) || null;
+    return getGroupsCache().find(g => g.groupId === groupId) || null;
   },
 
-  /** Create a new group */
   create(groupData) {
-    const groups = this.getAll();
-    groups.push(groupData);
-    save(KEYS.GROUPS, groups);
+    const groups = [...getGroupsCache(), groupData];
+    setGroupsCache(groups);
+    runCloud(cloudCreateGroup(groupData), 'createGroup');
     return groupData;
   },
 
-  /** Update a group */
   update(groupId, updates) {
-    const groups = this.getAll();
+    const groups = getGroupsCache();
     const idx = groups.findIndex(g => g.groupId === groupId);
     if (idx === -1) return null;
-    groups[idx] = { ...groups[idx], ...updates, updatedAt: new Date().toISOString() };
-    save(KEYS.GROUPS, groups);
-    return groups[idx];
+    const updated = { ...groups[idx], ...updates, updatedAt: new Date().toISOString() };
+    groups[idx] = updated;
+    setGroupsCache([...groups]);
+    runCloud(cloudUpdateGroup(groupId, updates, updated), 'updateGroup');
+    return updated;
   },
 
-  /** Delete a group and all its expenses */
   delete(groupId) {
-    const groups = this.getAll().filter(g => g.groupId !== groupId);
-    save(KEYS.GROUPS, groups);
-    // Also delete expenses
+    removeGroupFromCache(groupId);
     ExpenseStore.deleteByGroup(groupId);
+    runCloud(cloudDeleteGroup(groupId), 'deleteGroup');
   },
 
-  /** Check if a user already has a group with this name */
   userHasGroupNamed(userId, name) {
-    const groups = this.getAll();
-    return groups.some(
+    return getGroupsCache().some(
       g => g.creatorId === userId &&
            g.name.trim().toLowerCase() === name.trim().toLowerCase()
     );
   },
 
-  /** Add a member to a group */
   addMember(groupId, member) {
     const group = this.getById(groupId);
     if (!group) return null;
     if (group.members.some(m => m.memberId === member.memberId)) return group;
-    const members = [...group.members, member];
-    return this.update(groupId, { members });
+    const updated = {
+      ...group,
+      members: [...group.members, member],
+      updatedAt: new Date().toISOString(),
+    };
+    upsertGroupInCache(updated);
+    runCloud(cloudAddMember(groupId, member), 'addMember');
+    return updated;
   },
 
-  /** Remove a member from a group */
   removeMember(groupId, memberId) {
     const group = this.getById(groupId);
     if (!group) return null;
-    const members = group.members.filter(m => m.memberId !== memberId);
-    return this.update(groupId, { members });
+    const updated = {
+      ...group,
+      members: group.members.filter(m => m.memberId !== memberId),
+      updatedAt: new Date().toISOString(),
+    };
+    upsertGroupInCache(updated);
+    runCloud(cloudRemoveMember(groupId, memberId), 'removeMember');
+    return updated;
   },
 
-  /** Add a conversion rate to a group */
   addConversionRate(groupId, rate) {
     const group = this.getById(groupId);
     if (!group) return null;
-    const conversionRates = group.conversionRates || [];
-    conversionRates.push(rate);
-    return this.update(groupId, { conversionRates });
+    const updated = {
+      ...group,
+      conversionRates: [...(group.conversionRates || []), rate],
+      updatedAt: new Date().toISOString(),
+    };
+    upsertGroupInCache(updated);
+    runCloud(cloudAddConversionRate(groupId, rate), 'addConversionRate');
+    return updated;
   },
 
-  /** Remove a conversion rate from a group */
   removeConversionRate(groupId, rateId) {
     const group = this.getById(groupId);
     if (!group) return null;
-    const conversionRates = (group.conversionRates || []).filter(r => r.rateId !== rateId);
-    return this.update(groupId, { conversionRates });
+    const updated = {
+      ...group,
+      conversionRates: (group.conversionRates || []).filter(r => r.rateId !== rateId),
+      updatedAt: new Date().toISOString(),
+    };
+    upsertGroupInCache(updated);
+    runCloud(cloudRemoveConversionRate(groupId, rateId), 'removeConversionRate');
+    return updated;
   },
 
-  /** Get groups where userId is a member */
   getForUser(userId) {
-    return this.getAll().filter(g =>
+    return getGroupsCache().filter(g =>
       g.members.some(m => m.memberId === userId)
     );
   },
+
+  /** Replace group in cache after cloud fetch (join flow) */
+  mergeGroup(group) {
+    upsertGroupInCache(group);
+    return group;
+  },
 };
 
-/* ─── Expenses ─── */
-
 export const ExpenseStore = {
-  /** Get all expenses */
   getAll() {
-    return load(KEYS.EXPENSES) || [];
+    return getExpensesCache();
   },
 
-  /** Get expenses for a group */
   getByGroup(groupId) {
-    return this.getAll()
+    return getExpensesCache()
       .filter(e => e.groupId === groupId)
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   },
 
-  /** Get a single expense */
   getById(expenseId) {
-    return this.getAll().find(e => e.expenseId === expenseId) || null;
+    return getExpensesCache().find(e => e.expenseId === expenseId) || null;
   },
 
-  /** Create expense */
   create(expenseData) {
-    const expenses = this.getAll();
-    expenses.push(expenseData);
-    save(KEYS.EXPENSES, expenses);
+    const expenses = [...getExpensesCache(), expenseData];
+    setExpensesCache(expenses);
+    runCloud(cloudCreateExpense(expenseData), 'createExpense');
     return expenseData;
   },
 
-  /** Update expense */
   update(expenseId, updates) {
-    const expenses = this.getAll();
+    const expenses = getExpensesCache();
     const idx = expenses.findIndex(e => e.expenseId === expenseId);
     if (idx === -1) return null;
+    const snapshot = { ...expenses[idx] };
     expenses[idx] = {
       ...expenses[idx],
       ...updates,
       updatedAt: new Date().toISOString(),
       editHistory: [
         ...(expenses[idx].editHistory || []),
-        { at: new Date().toISOString(), snapshot: expenses[idx] }
-      ]
+        { at: new Date().toISOString(), snapshot: expenses[idx] },
+      ],
     };
-    save(KEYS.EXPENSES, expenses);
+    setExpensesCache([...expenses]);
+    runCloud(cloudUpdateExpense(expenseId, updates, snapshot), 'updateExpense');
     return expenses[idx];
   },
 
-  /** Delete expense */
   delete(expenseId) {
-    const expenses = this.getAll().filter(e => e.expenseId !== expenseId);
-    save(KEYS.EXPENSES, expenses);
+    removeExpenseFromCache(expenseId);
+    runCloud(cloudDeleteExpense(expenseId), 'deleteExpense');
   },
 
-  /** Delete all expenses for a group */
   deleteByGroup(groupId) {
-    const expenses = this.getAll().filter(e => e.groupId !== groupId);
-    save(KEYS.EXPENSES, expenses);
+    removeExpensesForGroupFromCache(groupId);
+    runCloud(
+      import('./dataLayer.js').then(m => m.cloudDeleteExpensesByGroup(groupId)),
+      'deleteExpensesByGroup'
+    );
   },
 
-  /** Get total expense count for a group */
   countByGroup(groupId) {
-    return this.getAll().filter(e => e.groupId === groupId).length;
+    return getExpensesCache().filter(e => e.groupId === groupId).length;
   },
 };
